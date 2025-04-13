@@ -51,7 +51,7 @@ const Header = () => {
                             <div className={styles.userSection}>
                                 <Link to="/profile" className={styles.userInfo}>
                                     <span className={styles.username}>
-                                        {user?.username || user?.email}
+                                        {`${user?.firstName} ${user?.lastName}` || user?.email}
                                     </span>
                                 </Link>
                                 <button 
