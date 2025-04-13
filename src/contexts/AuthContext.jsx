@@ -66,6 +66,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (email, password, username) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ошибка регистрации');
+      }
+
+      const data = await response.json();
+      console.log('Register response:', data);
+
+      // После успешной регистрации автоматически логиним пользователя
+      return await login(email, password);
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -94,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
+    register,
     logout,
     isAuthenticated: !!user // Явно вычисляем isAuthenticated
   };

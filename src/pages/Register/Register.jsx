@@ -20,7 +20,7 @@ function Register() {
       await register(email, username, password);
       navigate('/');
     } catch (error) {
-      setError('Ошибка при регистрации. Возможно, такой email уже существует.');
+      setError(error.message);
     }
   };
 
