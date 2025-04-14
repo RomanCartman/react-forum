@@ -1,0 +1,84 @@
+import React, { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import styles from './Profile.module.css';
+
+const Profile = () => {
+  const { token } = useContext(AuthContext);
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка загрузки профиля');
+        }
+
+        const data = await response.json();
+        setProfileData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchProfile();
+    }
+  }, [token]);
+
+  if (loading) {
+    return <div className={styles.loading}>Загрузка профиля...</div>;
+  }
+
+  if (error) {
+    return <div className={styles.error}>{error}</div>;
+  }
+
+  return (
+    <div className={styles.profileContainer}>
+      <div className={styles.profileCard}>
+        <h1>Профиль пользователя</h1>
+        
+        <div className={styles.profileInfo}>
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Имя:</span>
+            <span className={styles.value}>{profileData?.firstName || 'Не указано'}</span>
+          </div>
+          
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Фамилия:</span>
+            <span className={styles.value}>{profileData?.lastName || 'Не указано'}</span>
+          </div>
+          
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Email:</span>
+            <span className={styles.value}>{profileData?.email}</span>
+          </div>
+          
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Группа:</span>
+            <span className={styles.value}>{profileData?.studentGroup || 'Не указана'}</span>
+          </div>
+          
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Дата регистрации:</span>
+            <span className={styles.value}>
+              {new Date(profileData?.createdAt).toLocaleDateString('ru-RU')}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Profile; 

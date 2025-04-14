@@ -8,6 +8,7 @@ import Home from './pages/Home/Home';
 import Courses from './pages/Courses/Courses';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
+import Profile from './pages/Profile/Profile';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 
 function App() {
@@ -22,6 +23,11 @@ function App() {
               <Route path="/courses" element={
                   <ProtectedRoute>
                     <Courses />
+                  </ProtectedRoute>
+                } />
+              <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 } />
               <Route path="/login" element={<Login />} />
