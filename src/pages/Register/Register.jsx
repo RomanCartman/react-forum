@@ -6,7 +6,8 @@ import styles from './Register.module.css';
 
 function Register() {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { register } = useContext(AuthContext);
@@ -17,7 +18,7 @@ function Register() {
     setError('');
     
     try {
-      await register(email, password, username);
+      await register(email, password, firstName, lastName);
       navigate('/');
     } catch (error) {
       setError(error.message);
@@ -32,6 +33,30 @@ function Register() {
         {error && <div className={styles.error}>{error}</div>}
         
         <div className={styles.formGroup}>
+          <label htmlFor="firstName">Имя</label>
+          <input
+            type="text"
+            id="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            minLength={3}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="firstName">Фамилия</label>
+          <input
+            type="text"
+            id="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            minLength={3}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -39,18 +64,6 @@ function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="username">Имя пользователя</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            minLength={3}
           />
         </div>
 
