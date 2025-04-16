@@ -6,6 +6,7 @@ import styles from './Register.module.css';
 
 function Register() {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +19,7 @@ function Register() {
     setError('');
     
     try {
-      await register(email, password, firstName, lastName);
+      await register(email, password, firstName, lastName, username);
       navigate('/');
     } catch (error) {
       setError(error.message);
@@ -53,6 +54,17 @@ function Register() {
             onChange={(e) => setLastName(e.target.value)}
             required
             minLength={3}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="email">Username</label>
+          <input
+            type="username"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
           />
         </div>
 

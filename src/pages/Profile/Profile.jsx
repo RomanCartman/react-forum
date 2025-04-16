@@ -3,7 +3,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import styles from './Profile.module.css';
 
 const Profile = () => {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,7 +11,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('http://localhost:5000/auth/me', {
+        const response = await fetch(`http://localhost:5000/auth/${user.username}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -30,10 +30,10 @@ const Profile = () => {
       }
     };
 
-    if (token) {
+    if (token && user?.username) {
       fetchProfile();
     }
-  }, [token]);
+  }, [token, user?.username]);
 
   if (loading) {
     return <div className={styles.loading}>Загрузка профиля...</div>;
@@ -59,6 +59,11 @@ const Profile = () => {
             <span className={styles.value}>{profileData?.lastName || 'Не указано'}</span>
           </div>
           
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Username:</span>
+            <span className={styles.value}>{profileData?.username}</span>
+          </div>
+
           <div className={styles.infoRow}>
             <span className={styles.label}>Email:</span>
             <span className={styles.value}>{profileData?.email}</span>

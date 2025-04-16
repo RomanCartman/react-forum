@@ -11,9 +11,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Функция для получения данных пользователя
-  const fetchUserData = async (token) => {
+  const fetchUserData = async (token, username) => {
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
+      const response = await fetch(`${API_URL}/auth/${username}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.accessToken);
 
       // Получаем данные пользователя
-      const userData = await fetchUserData(data.accessToken);
+      const userData = await fetchUserData(data.accessToken, data.username);
       if (!userData) {
         throw new Error('Не удалось получить данные пользователя');
       }
@@ -66,14 +66,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, firstName, lastName) => {
+  const register = async (email, password, firstName, lastName, username) => {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+        body: JSON.stringify({ email, password, firstName, lastName, username }),
       });
 
       if (!response.ok) {
