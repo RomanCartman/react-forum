@@ -73,6 +73,31 @@ const Profile = () => {
             <span className={styles.label}>Группа:</span>
             <span className={styles.value}>{profileData?.studentGroup || 'Не указана'}</span>
           </div>
+
+          <div className={styles.infoRow}>
+            <span className={styles.label}>Роли:</span>
+            <div className={styles.rolesList}>
+              {profileData?.roles.map(role => (
+                <span key={role.id} className={styles.roleTag}>
+                  {role.name}
+                  <span className={styles.roleDescription}>{role.description}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {profileData?.permissions?.length > 0 && (
+            <div className={styles.infoRow}>
+              <span className={styles.label}>Права:</span>
+              <div className={styles.permissionsList}>
+                {profileData.permissions.map(permission => (
+                  <span key={permission.id} className={styles.permissionTag}>
+                    {permission.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           
           <div className={styles.infoRow}>
             <span className={styles.label}>Дата регистрации:</span>
