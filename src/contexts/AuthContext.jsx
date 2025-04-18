@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
 
       // Сохраняем токен
       localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('username', data.username);
       setToken(data.accessToken);
 
       // Получаем данные пользователя
@@ -103,8 +104,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const savedToken = localStorage.getItem('token');
-      if (savedToken) {
-        const userData = await fetchUserData(savedToken);
+      const savedUsername = localStorage.getItem('username');
+
+      if (savedToken && savedUsername) {
+        const userData = await fetchUserData(savedToken, savedUsername);
         if (!userData) {
           logout(); // Если не удалось получить данные пользователя, выходим
         }
