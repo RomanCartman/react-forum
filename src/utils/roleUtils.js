@@ -14,8 +14,9 @@ const ROLE_LEVELS = {
 
 // Определяем константы для разрешений
 export const PERMISSIONS = {
-  MANAGE_USERS: 'manage:users',
-  // Добавьте другие разрешения по мере необходимости
+  CREATE_NEWS: 'create:news',
+  UPDATE_NEWS: 'update:news',
+  DELETE_NEWS: 'delete:news'
 };
 
 // Проверяем, имеет ли пользователь хотя бы одну из требуемых ролей
