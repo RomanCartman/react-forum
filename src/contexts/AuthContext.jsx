@@ -7,11 +7,12 @@ const API_URL = 'http://localhost:5000'; // Убедитесь, что это п
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem('accessToken'));
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const [loading, setLoading] = useState(true);
 
   // Функция для получения данных пользователя
-  const fetchUserData = async (token, username) => {
+  const fetchUserProfile = async (username) => {
     try {
       const response = await fetch(`${API_URL}/auth/${username}`, {
         headers: {
@@ -19,16 +20,44 @@ export const AuthProvider = ({ children }) => {
         }
       });
       
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
+      if (!response.ok) {
+        throw new Error('Не удалось получить данные пользователя');
       }
-      return null;
+      
+      const userData = await response.json();
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching user profile:', error);
       return null;
+    }
+  };
+
+  // Функция обновления токена
+  const refreshAccessToken = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Не удалось обновить токен');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      setToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      return data.accessToken;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      logout();
+      throw error;
     }
   };
 
@@ -47,34 +76,36 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      console.log('Login response:', data); // Для отладки
-
-      // Сохраняем токен
-      localStorage.setItem('token', data.accessToken);
+      
+      // Сохраняем токены
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('username', data.username);
+      
       setToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
 
-      // Получаем данные пользователя
-      const userData = await fetchUserData(data.accessToken, data.username);
+      // Получаем полные данные пользователя
+      const userData = await fetchUserProfile(data.username);
       if (!userData) {
         throw new Error('Не удалось получить данные пользователя');
       }
 
-      return { ...data, user: userData };
+      return userData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   };
 
-  const register = async (email, password, firstName, lastName, username) => {
+  const register = async (registerData) => {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, firstName, lastName, username }),
+        body: JSON.stringify(registerData),
       });
 
       if (!response.ok) {
@@ -83,39 +114,63 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      console.log('Register response:', data);
-
-      // После успешной регистрации автоматически логиним пользователя
-      return await login(email, password);
+      
+      // После успешной регистрации выполняем вход
+      return await login(registerData.email, registerData.password);
     } catch (error) {
       console.error('Register error:', error);
       throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      if (token) {
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('username');
+      setToken(null);
+      setRefreshToken(null);
+      setUser(null);
+    }
   };
 
-  // При загрузке приложения проверяем токен и получаем данные пользователя
+  // При загрузке приложения проверяем токены и получаем данные пользователя
   useEffect(() => {
-    const init = async () => {
-      const savedToken = localStorage.getItem('token');
+    const initAuth = async () => {
+      const savedToken = localStorage.getItem('accessToken');
+      const savedRefreshToken = localStorage.getItem('refreshToken');
       const savedUsername = localStorage.getItem('username');
 
-      if (savedToken && savedUsername) {
-        const userData = await fetchUserData(savedToken, savedUsername);
-        if (!userData) {
-          logout(); // Если не удалось получить данные пользователя, выходим
+      if (savedToken && savedRefreshToken && savedUsername) {
+        try {
+          // Пробуем получить данные пользователя
+          const userData = await fetchUserProfile(savedUsername);
+          if (!userData) {
+            // Если не получилось, пробуем обновить токен
+            await refreshAccessToken();
+            // И снова пробуем получить данные
+            await fetchUserProfile(savedUsername);
+          }
+        } catch (error) {
+          console.error('Auth initialization error:', error);
+          logout();
         }
       }
       setLoading(false);
     };
 
-    init();
+    initAuth();
   }, []);
 
   const value = {
@@ -125,7 +180,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!user // Явно вычисляем isAuthenticated
+    refreshAccessToken,
+    isAuthenticated: !!user
   };
 
   return (

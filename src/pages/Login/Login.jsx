@@ -7,20 +7,22 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, loading } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
     try {
       await login(email, password);
-      console.log('Login successful'); // Добавим для отладки
       navigate('/');
     } catch (error) {
-      console.error('Login error:', error); // Добавим для отладки
-      setError('Неверный email или пароль');
+      setError(error.message || 'Неверный email или пароль');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -39,6 +41,7 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -50,15 +53,16 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
 
         <button 
           type="submit" 
           className={styles.submitButton}
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? 'Загрузка...' : 'Войти'}
+          {isLoading ? 'Загрузка...' : 'Войти'}
         </button>
       </form>
     </div>
