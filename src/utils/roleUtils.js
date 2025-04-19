@@ -16,7 +16,49 @@ const ROLE_LEVELS = {
 export const PERMISSIONS = {
   CREATE_NEWS: 'create:news',
   UPDATE_NEWS: 'update:news',
-  DELETE_NEWS: 'delete:news'
+  DELETE_NEWS: 'delete:news',
+  MANAGE_USERS: 'manage:users',
+  MANAGE_ROLES: 'manage:roles',
+  MANAGE_PERMISSIONS: 'manage:permissions'
+};
+
+// Кэш для хранения прав ролей
+const rolePermissionsCache = new Map();
+
+// Функция для получения прав роли
+export const fetchRolePermissions = async (roleId, token) => {
+  try {
+    // Проверяем кэш
+    if (rolePermissionsCache.has(roleId)) {
+      return rolePermissionsCache.get(roleId);
+    }
+
+    const response = await fetch(`http://localhost:5000/roles/${roleId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении прав роли');
+    }
+
+    const roleData = await response.json();
+    const permissions = roleData.permissions || [];
+    
+    // Сохраняем в кэш
+    rolePermissionsCache.set(roleId, permissions);
+    
+    return permissions;
+  } catch (error) {
+    console.error('Ошибка при получении прав роли:', error);
+    return [];
+  }
+};
+
+// Очистка кэша прав ролей
+export const clearRolePermissionsCache = () => {
+  rolePermissionsCache.clear();
 };
 
 // Проверяем, имеет ли пользователь хотя бы одну из требуемых ролей
@@ -38,31 +80,67 @@ export const hasRequiredRole = (userRoles = [], requiredRoles = []) => {
 };
 
 // Проверяем наличие конкретного разрешения
-export const hasPermission = (userPermissions = [], requiredPermission) => {
-  if (!userPermissions?.length || !requiredPermission) {
+export const hasPermission = async (user, requiredPermission, token) => {
+  if (!user || !requiredPermission) {
     return false;
   }
-  return userPermissions.some(permission => permission.name === requiredPermission);
+
+  // Проверяем прямые права пользователя
+  const hasDirectPermission = user.permissions?.some(
+    permission => permission.name === requiredPermission
+  );
+
+  if (hasDirectPermission) {
+    return true;
+  }
+
+  // Проверяем права через роли
+  if (user.roles?.length) {
+    for (const role of user.roles) {
+      const rolePermissions = await fetchRolePermissions(role.id, token);
+      const hasRolePermission = rolePermissions.some(
+        permission => permission.name === requiredPermission
+      );
+      
+      if (hasRolePermission) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 // Проверяем наличие всех требуемых разрешений
-export const hasAllPermissions = (userPermissions = [], requiredPermissions = []) => {
-  if (!userPermissions?.length || !requiredPermissions?.length) {
+export const hasAllPermissions = async (user, requiredPermissions, token) => {
+  if (!user || !requiredPermissions?.length) {
     return false;
   }
-  return requiredPermissions.every(permission => 
-    hasPermission(userPermissions, permission)
-  );
+
+  for (const permission of requiredPermissions) {
+    const hasRequiredPermission = await hasPermission(user, permission, token);
+    if (!hasRequiredPermission) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 // Проверяем наличие хотя бы одного из требуемых разрешений
-export const hasAnyPermission = (userPermissions = [], requiredPermissions = []) => {
-  if (!userPermissions?.length || !requiredPermissions?.length) {
+export const hasAnyPermission = async (user, requiredPermissions, token) => {
+  if (!user || !requiredPermissions?.length) {
     return false;
   }
-  return requiredPermissions.some(permission => 
-    hasPermission(userPermissions, permission)
-  );
+
+  for (const permission of requiredPermissions) {
+    const hasRequiredPermission = await hasPermission(user, permission, token);
+    if (hasRequiredPermission) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 // Получаем список всех разрешений пользователя

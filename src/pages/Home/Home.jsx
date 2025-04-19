@@ -11,22 +11,62 @@ function Home() {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingNews, setEditingNews] = useState(null);
+  const [permissions, setPermissions] = useState({
+    canCreate: false,
+    canUpdateIds: new Set(),
+    canDeleteIds: new Set()
+  });
 
-  // Проверяем разрешения пользователя
-  const canCreateNews = hasPermission(user?.permissions, PERMISSIONS.CREATE_NEWS);
-  console.log('User permissions:', user?.permissions);
-  console.log('Can create news:', canCreateNews);
-  
+  // Загружаем права пользователя
+  useEffect(() => {
+    const loadPermissions = async () => {
+      if (!user) return;
+
+      try {
+        const canCreate = await hasPermission(user, PERMISSIONS.CREATE_NEWS, token);
+        setPermissions(prev => ({ ...prev, canCreate }));
+      } catch (err) {
+        console.error('Ошибка при проверке прав создания:', err);
+      }
+    };
+
+    loadPermissions();
+  }, [user, token]);
+
+  // Загружаем права на редактирование и удаление для каждой новости
+  useEffect(() => {
+    const loadNewsPermissions = async () => {
+      if (!user || !news.length) return;
+
+      const updateIds = new Set();
+      const deleteIds = new Set();
+
+      for (const newsItem of news) {
+        if (newsItem.authorId === user.id) {
+          const canUpdate = await hasPermission(user, PERMISSIONS.UPDATE_NEWS, token);
+          const canDelete = await hasPermission(user, PERMISSIONS.DELETE_NEWS, token);
+
+          if (canUpdate) updateIds.add(newsItem.id);
+          if (canDelete) deleteIds.add(newsItem.id);
+        }
+      }
+
+      setPermissions(prev => ({
+        ...prev,
+        canUpdateIds: updateIds,
+        canDeleteIds: deleteIds
+      }));
+    };
+
+    loadNewsPermissions();
+  }, [user, token, news]);
+
   const canUpdateNews = (newsItem) => {
-    const canUpdate = newsItem.authorId === user?.id && hasPermission(user?.permissions, PERMISSIONS.UPDATE_NEWS);
-    console.log('Can update news:', canUpdate, 'Author check:', newsItem.authorId === user?.id);
-    return canUpdate;
+    return permissions.canUpdateIds.has(newsItem.id);
   };
 
   const canDeleteNews = (newsItem) => {
-    const canDelete = newsItem.authorId === user?.id && hasPermission(user?.permissions, PERMISSIONS.DELETE_NEWS);
-    console.log('Can delete news:', canDelete, 'Author check:', newsItem.authorId === user?.id);
-    return canDelete;
+    return permissions.canDeleteIds.has(newsItem.id);
   };
 
   const fetchNews = async () => {
@@ -163,7 +203,7 @@ function Home() {
       <section className={styles.newsSection}>
         <div className={styles.newsHeader}>
           <h2>Последние новости</h2>
-          {!editingNews && canCreateNews && (
+          {!editingNews && permissions.canCreate && (
             <button 
               className={styles.createButton}
               onClick={() => setShowCreateForm(!showCreateForm)}
