@@ -5,12 +5,6 @@ export const ROLES = {
   ADMINISTRATOR: 'administrator'
 };
 
-// Определяем уровни доступа для ролей
-const ROLE_LEVELS = {
-  [ROLES.STUDENT]: 1,
-  [ROLES.TEACHER]: 2,
-  [ROLES.ADMINISTRATOR]: 3
-};
 
 // Определяем константы для разрешений
 export const PERMISSIONS = {
@@ -25,7 +19,7 @@ export const PERMISSIONS = {
 // Кэш для хранения прав ролей
 const rolePermissionsCache = new Map();
 
-// Функция для получения прав роли
+// Функция для получения прав роли с обработкой истекшего токена
 export const fetchRolePermissions = async (roleId, token) => {
   try {
     // Проверяем кэш
@@ -33,17 +27,47 @@ export const fetchRolePermissions = async (roleId, token) => {
       return rolePermissionsCache.get(roleId);
     }
 
-    const response = await fetch(`http://localhost:5000/roles/${roleId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+    const makeRequest = async (accessToken) => {
+      const response = await fetch(`http://localhost:5000/roles/${roleId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (response.status === 401) {
+        // Если токен истек, пробуем обновить его
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('Отсутствует refresh token');
+        }
+
+        const refreshResponse = await fetch('http://localhost:5000/auth/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!refreshResponse.ok) {
+          throw new Error('Не удалось обновить токен');
+        }
+
+        const { accessToken: newToken } = await refreshResponse.json();
+        localStorage.setItem('accessToken', newToken);
+
+        // Повторяем запрос с новым токеном
+        return makeRequest(newToken);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error('Ошибка при получении прав роли');
-    }
+      if (!response.ok) {
+        throw new Error('Ошибка при получении прав роли');
+      }
 
-    const roleData = await response.json();
+      return response.json();
+    };
+
+    const roleData = await makeRequest(token);
     const permissions = roleData.permissions || [];
     
     // Сохраняем в кэш
@@ -66,17 +90,6 @@ export const hasRequiredRole = (userRoles = [], requiredRoles = []) => {
   if (!userRoles?.length || !requiredRoles?.length) {
     return false;
   }
-
-  // Получаем максимальный уровень доступа пользователя
-  const maxUserRoleLevel = Math.max(
-    ...userRoles.map(role => ROLE_LEVELS[role.name] || 0)
-  );
-
-  // Проверяем, есть ли у пользователя роль с достаточным уровнем доступа
-  return requiredRoles.some(requiredRole => {
-    const requiredLevel = ROLE_LEVELS[requiredRole];
-    return maxUserRoleLevel >= requiredLevel;
-  });
 };
 
 // Проверяем наличие конкретного разрешения
