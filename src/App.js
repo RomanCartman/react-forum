@@ -12,6 +12,7 @@ import Register from './pages/Register/Register';
 import Profile from './pages/Profile/Profile';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import RoleBasedRoute from './components/RoleBasedRoute/RoleBasedRoute';
+import NewsDetail from './pages/NewsDetail/NewsDetail';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
               
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
             </Routes>
           </main>
         </div>

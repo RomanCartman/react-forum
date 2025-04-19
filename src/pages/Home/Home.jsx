@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { PERMISSIONS, hasPermission } from '../../utils/roleUtils';
 import NewsForm from '../../components/NewsForm/NewsForm';
@@ -231,18 +232,22 @@ function Home() {
           </div>
         )}
 
-        <div className={styles.newsGrid}>
+        <div className={styles.newsList}>
           {news.map((newsItem) => (
-            <article key={newsItem.id} className={styles.newsCard}>
+            <Link 
+              to={`/news/${newsItem.id}`}
+              key={newsItem.id} 
+              className={styles.newsItem}
+            >
               {newsItem.images && newsItem.images.length > 0 && (
-                <div className={styles.newsImage}>
+                <div className={styles.newsItemImage}>
                   <img src={newsItem.images[0]} alt={newsItem.title} />
                 </div>
               )}
-              <div className={styles.newsContent}>
-                <h3>{newsItem.title}</h3>
-                <p>{newsItem.content}</p>
-                <div className={styles.newsFooter}>
+              <div className={styles.newsItemContent}>
+                <h3 className={styles.newsItemTitle}>{newsItem.title}</h3>
+                <p className={styles.newsItemPreview}>{newsItem.content}</p>
+                <div className={styles.newsItemFooter}>
                   <div className={styles.author}>
                     <span>Автор: {newsItem.author.firstName} {newsItem.author.lastName}</span>
                   </div>
@@ -255,7 +260,7 @@ function Home() {
                   </div>
                 </div>
                 {(canUpdateNews(newsItem) || canDeleteNews(newsItem)) && (
-                  <div className={styles.newsActions}>
+                  <div className={styles.newsItemActions} onClick={(e) => e.preventDefault()}>
                     {canUpdateNews(newsItem) && (
                       <button 
                         className={styles.editButton}
@@ -275,7 +280,7 @@ function Home() {
                   </div>
                 )}
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
