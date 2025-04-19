@@ -40,9 +40,11 @@ const Header = () => {
                         <Link to="/schedule" className={styles.navLink}>
                             Расписание
                         </Link>
-                        <Link to="/news" className={styles.navLink}>
-                            Новости
-                        </Link>
+                        {user?.roles.some(role => role.name === 'administrator') && (
+                            <Link to="/admin" className={styles.navLink}>
+                                Админ панель
+                            </Link>
+                        )}
                     </nav>
 
                     {/* Кнопки авторизации или информация о пользователе */}
