@@ -46,23 +46,21 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ refreshToken: currentRefreshToken }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
         if (response.status === 401) {
-          // Если refresh token недействителен, выходим из системы
           await logout();
-          throw new Error('Сессия истекла, требуется повторный вход');
+          throw new Error(data.message || 'Сессия истекла, требуется повторный вход');
         }
-        throw new Error('Не удалось обновить токен');
+        throw new Error(data.message || 'Не удалось обновить токен');
       }
 
-      const { accessToken, refreshToken: newRefreshToken } = await response.json();
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      setToken(data.accessToken);
       
-      // Сразу обновляем оба токена
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', newRefreshToken);
-      setToken(accessToken);
-      
-      return accessToken;
+      return data.accessToken;
     } catch (error) {
       console.error('Token refresh error:', error);
       await logout();

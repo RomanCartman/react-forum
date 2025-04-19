@@ -6,6 +6,7 @@ export const ROLES = {
 };
 
 
+
 // Определяем константы для разрешений
 export const PERMISSIONS = {
   CREATE_NEWS: 'create:news',
@@ -86,10 +87,13 @@ export const clearRolePermissionsCache = () => {
 };
 
 // Проверяем, имеет ли пользователь хотя бы одну из требуемых ролей
-export const hasRequiredRole = (userRoles = [], requiredRoles = []) => {
+export const hasRequiredRoles = (userRoles = [], requiredRoles =[]) => {
   if (!userRoles?.length || !requiredRoles?.length) {
     return false;
   }
+
+  const hasRole = userRoles.some(role => requiredRoles.includes(role.name));
+  return hasRole;
 };
 
 // Проверяем наличие конкретного разрешения

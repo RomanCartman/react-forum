@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { hasRequiredRole, hasAllPermissions } from '../../utils/roleUtils';
+import { hasRequiredRoles, hasAllPermissions } from '../../utils/roleUtils';
 import styles from './RoleBasedRoute.module.css';
 
 const RoleBasedRoute = ({ children, allowedRoles = [], requiredPermissions = [] }) => {
@@ -18,7 +18,7 @@ const RoleBasedRoute = ({ children, allowedRoles = [], requiredPermissions = [] 
   }
 
   // Проверяем роли и разрешения
-  const hasRole = hasRequiredRole(user.roles, allowedRoles);
+  const hasRole = hasRequiredRoles(user.roles, allowedRoles);
   const hasPermissions = hasAllPermissions(user.permissions, requiredPermissions);
 
   // Если требуются роли и разрешения, проверяем оба условия
